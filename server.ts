@@ -1,20 +1,27 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Ensure we have a valid API Key. If not, the server will log a warning, 
-// and the requests will report a clean warning to the client.
-const apiKey = process.env.GEMINI_API_KEY;
-
-const ai = new GoogleGenAI({
-  apiKey: apiKey || "",
-  httpOptions: {
-    headers: {
-      "User-Agent": "aistudio-build",
-    },
-  },
-});
+// Lazy helper to get the GoogleGenAI instance.
+// This prevents the application from crashing on startup if GEMINI_API_KEY is not defined.
+let aiInstance: GoogleGenAI | null = null;
+function getAi(): GoogleGenAI {
+  if (!aiInstance) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) {
+      throw new Error("GEMINI_API_KEY environment variable is required");
+    }
+    aiInstance = new GoogleGenAI({
+      apiKey: key,
+      httpOptions: {
+        headers: {
+          "User-Agent": "aistudio-build",
+        },
+      },
+    });
+  }
+  return aiInstance;
+}
 
 async function startServer() {
   const app = express();
@@ -46,7 +53,7 @@ async function startServer() {
         Only produce the raw lyrical lines.
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await getAi().models.generateContent({
         model,
         contents: prompt,
       });
@@ -70,7 +77,7 @@ async function startServer() {
         Return a JSON array of objects representing these rhymes.
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await getAi().models.generateContent({
         model,
         contents: prompt,
         config: {
@@ -127,7 +134,7 @@ async function startServer() {
         Return a single JSON object.
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await getAi().models.generateContent({
         model,
         contents: prompt,
         config: {
@@ -185,7 +192,7 @@ async function startServer() {
         Return a single JSON object.
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await getAi().models.generateContent({
         model,
         contents: prompt,
         config: {
@@ -228,7 +235,7 @@ async function startServer() {
         Keep the array size exactly equal to the number of non-empty lines in the input.
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await getAi().models.generateContent({
         model,
         contents: prompt,
         config: {
@@ -251,6 +258,7 @@ async function startServer() {
 
   // Vite integration
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
