@@ -1,0 +1,8 @@
+{
+  "name": "LyriStrat - Strategic Lyricist's Studio",
+  "description": "A sophisticated AI-powered lyrics writing platform that provides strategic guidance, rhyming assistance, and structural analysis for professional songwriters.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
